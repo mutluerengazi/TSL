@@ -2,7 +2,7 @@
 CC	:= gcc
 CFLAGS := -g -Wall
 
-TARGETS :=  libtsl.a  app get context_test
+TARGETS :=  libtsl.a  app get context_test contextswtich_test
 
 all: $(TARGETS)
 
@@ -27,6 +27,9 @@ get: get.c
 	gcc $(CFLAGS) -m32 -o $@ $<
 
 context: context_test.c
+	gcc $(CFLAGS) -m32 -o $@ $<
+
+context: contextswtich_test.c
 	gcc $(CFLAGS) -m32 -o $@ $<
 
 

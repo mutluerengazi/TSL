@@ -6,6 +6,7 @@ static int context_set = 0; // Add a global variable to track if the context has
 int globalvar = 21;
 
 int main() {
+    int b = 10;
     ucontext_t context;
     ucontext_t contextSecond;
 
@@ -15,8 +16,10 @@ int main() {
     printf("this is first.\n");
 
     getcontext(&contextSecond);
+    
     printf("this is second.\n");
     printf("Screenshot globalvar = %d\n", globalvar);
+    printf("Screenshot b = %d\n", b);
 
     if (context_set == 0) {
         // This block will run both initially and after the context is set below
@@ -29,6 +32,7 @@ int main() {
         printf("Performing some operations... a = %d\n", a);
 
         globalvar = globalvar + globalvar;
+        b++;
         printf("loop globalvar = %d\n", globalvar);
 
         // Restore the saved context
