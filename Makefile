@@ -2,7 +2,7 @@
 CC	:= gcc
 CFLAGS := -g -Wall
 
-TARGETS :=  libtsl.a  app get
+TARGETS :=  libtsl.a  app get context_test
 
 all: $(TARGETS)
 
@@ -25,6 +25,10 @@ app: app.o libtsl.a
 
 get: get.c
 	gcc $(CFLAGS) -m32 -o $@ $<
+
+context: context_test.c
+	gcc $(CFLAGS) -m32 -o $@ $<
+
 
 clean:
 	rm -rf core  *.o $(TARGETS)
