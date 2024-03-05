@@ -6,10 +6,11 @@
 #define __USE_GNU
 #endif
 #include <ucontext.h>
+#include <sys/ucontext.h>
 
 int n, m;
 
-int foo (int p, int q);
+int foo (int p, int q, int z);
 
 
 int 
@@ -46,7 +47,7 @@ main(int argc, char **argv)
 
     
     // call a function
-    foo(10, 20); // call foo(), which is getting and printing the context.
+    foo(10, 20, 30); // call foo(), which is getting and printing the context.
     
     // after running the program, think about and check the printed addresses (virtual memory addresses).
     
@@ -55,12 +56,13 @@ main(int argc, char **argv)
 
 
 
-int foo(int p, int q) 
+int foo(int p, int q, int z) 
 {   int ret;
     ucontext_t con;
     
     printf("foo: address of the argument p is 0x%x\n", (unsigned int) &p);
     printf("foo: address of the argument q is 0x%x\n", (unsigned int) &q);
+    printf("foo: address of the argument z is 0x%x\n", (unsigned int) &z);
     printf("foo: address of the local variable ret is 0x%x\n", (unsigned int) &ret);
 
     

@@ -30,8 +30,7 @@ void *foo(void *v)
 }
 
 
-int 
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int *tids;
     int i;

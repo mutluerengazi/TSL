@@ -21,8 +21,7 @@ int tsl_cancel(int tid);
 int tsl_gettid();
 
 
-int 
-tsl_init ( int salg)
+int tsl_init ( int salg)
 {
     return (0);
     // we put return(0) as a placeholder.
@@ -32,43 +31,37 @@ tsl_init ( int salg)
 
 
 
-int
-tsl_create_thread(void (*tsf)(void *), void *targ)
+int tsl_create_thread(void (*tsf)(void *), void *targ)
 {
     return (0);
 }
 
 
 
-int
-tsl_yield(int tid)
+int tsl_yield(int tid)
 {
     return (0);
 }
 
 
-int 
-tsl_exit()
+int tsl_exit()
 {
     return (0);
 }
 
-int
-tsl_join(int tid)
-{
-    return (0);
-}
-
-
-int
-tsl_cancel(int tid)
+int tsl_join(int tid)
 {
     return (0);
 }
 
 
-int
-tsl_gettid()
+int tsl_cancel(int tid)
+{
+    return (0);
+}
+
+
+int tsl_gettid()
 {
     return (0);
 }
