@@ -3,12 +3,20 @@
 #include <ucontext.h>
 
 static int context_set = 0; // Add a global variable to track if the context has been set
+int globalvar = 21;
 
 int main() {
     ucontext_t context;
+    ucontext_t contextSecond;
+
 
     // Save the current context
     getcontext(&context);
+    printf("this is first.\n");
+
+    getcontext(&contextSecond);
+    printf("this is second.\n");
+    printf("Screenshot globalvar = %d\n", globalvar);
 
     if (context_set == 0) {
         // This block will run both initially and after the context is set below
@@ -20,8 +28,11 @@ int main() {
         int a = 5;
         printf("Performing some operations... a = %d\n", a);
 
+        globalvar = globalvar + globalvar;
+        printf("loop globalvar = %d\n", globalvar);
+
         // Restore the saved context
-        setcontext(&context);
+        setcontext(&contextSecond);
 
         // The execution will jump back to getcontext() after this line
     } else {
