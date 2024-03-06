@@ -15,11 +15,29 @@
 #define ALG_MYALGORITHM 3
 
 #define TID_MAIN 1 // tid of the main tread. this id is reserved for main thread.
-
 #define TSL_ANY 0  // yield to a thread selected with a scheduling alg.
-
 #define TSL_ERROR  -1  // there is an error in the function execution.
 #define TSL_SUCCESS 0  // function execution success
+
+typedef enum {
+    TSL_RUNNING, // Running state
+    READY,   // Ready state
+    BLOCKED, // Blocked state
+} ThreadState;
+
+typedef struct TCB {
+int tid; // thread identifier
+unsigned int state; // thread state
+ucontext_t context; // pointer to context structure
+char *stack; // pointer to stack
+} TCB;
+
+typedef struct tsl_library_state {
+    int scheduling_algorithm; // The scheduling algorithm being used
+    TCB *main_thread_tcb;     // TCB for the main thread
+    // Add structures for managing TCBs and the ready queue here
+} TSL_Library_State;
+
 
 
 int tsl_init(int salg);

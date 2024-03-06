@@ -3,8 +3,6 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include "tsl.h"
-
-
 #define MAXCOUNT 1000
 #define YIELDPERIOD 100
 
@@ -30,38 +28,51 @@ void *foo(void *v)
 }
 
 
-int main(int argc, char **argv)
-{
+int main(int argc, char *argv[]) {
     int *tids;
     int i;
     int numthreads = 0;
 
     if (argc != 2) {
-        printf ("usage: ./app numofthreads\n");
+        printf("usage: ./app numofthreads\n");
         exit(1); 
     }
-    
-    numthreads = atoi (argv[1]);
 
-    tids = (int *) malloc (numthreads * sizeof(int));
+    numthreads = atoi(argv[1]);
 
-	tids[0] = tsl_init (ALG_FCFS);
-    // at tid[0] we have the id of the main thread
-    
-    for (i = 1; i < numthreads; ++i) {
-		tids[i] = tsl_create_thread ((void *)&foo, NULL);
-		printf ("thead %d created\n", (int) tids[i]);
-	}
-
-    for (i = 1; i < numthreads; ++i) {
-        printf ("main: waiting for thead %d\n", (int) tids[i]);
-        tsl_join (tids[i]);
-        printf ("main: thead %d finished\n", (int) tids[i]);
-
+    tids = (int *) malloc(numthreads * sizeof(int));
+    if (!tids) {
+        perror("Failed to allocate memory for tids");
+        exit(1);
     }
-    
-    printf ("main thread calling tlib_exit\n");
+
+    // Assuming ALG_FCFS is defined elsewhere
+    if (tsl_init(ALG_FCFS) != 0) {
+        fprintf(stderr, "Failed to initialize threading library.\n");
+        free(tids);
+        exit(1);
+    }
+    tids[0] = 1; // Assuming the main thread ID is 1 as set by tsl_init
+
+    for (i = 1; i < numthreads; ++i) {
+        tids[i] = tsl_create_thread(foo, NULL);
+        if (tids[i] == TSL_ERROR) {
+            fprintf(stderr, "Failed to create thread.\n");
+            // Handle error as appropriate, perhaps by cleaning up and exiting
+        } else {
+            printf("Thread %d created\n", tids[i]);
+        }
+    }
+
+    for (i = 1; i < numthreads; ++i) {
+        printf("main: waiting for thread %d\n", tids[i]);
+        tsl_join(tids[i]);
+        printf("main: thread %d finished\n", tids[i]);
+    }
+
+    printf("main thread calling tsl_exit\n");
     tsl_exit();
 
-	return 0;
+    free(tids); // Don't forget to free the allocated memory
+    return 0;
 }

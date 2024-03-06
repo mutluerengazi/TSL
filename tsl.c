@@ -11,6 +11,16 @@
 
 #include <ucontext.h>
 #include "tsl.h"
+// Define constants for scheduling algorithms if not already defined
+#ifndef SCHED_ALG_1
+#define SCHED_ALG_1 1
+#endif
+
+// Define TSL ERROR if not already defined
+#ifndef TSL_ERROR
+#define TSL_ERROR -1
+#endif
+
 
 int tsl_init(int salg);
 int tsl_create_thread (void (*tsf)(void *), void *targ);
@@ -20,35 +30,43 @@ int tsl_join(int tid);
 int tsl_cancel(int tid);
 int tsl_gettid();
 
+TSL_Library_State *library_state = NULL;
 
-int tsl_init (int salg)
-{
-    /*
-        An application will call this function exactly once before creating any threads.
-        The parameter salg is used to indicate the scheduling algorithm the library
-        will use. On success, 0 will be return. On failure, -1 (TSL ERROR) will be
-        returned
 
-        As part of this initialization,
-        a ready queue structure (runqueue structure) should be created and initialized
-        as well. It will keep a list of TCBs corresponding to the threads that are in ready
-        state. If you wish you can create and initialize other queues. It is up to you how to
-        manage the set of TCBs of the threads that can be in various states. You can keep
-        all TCBs in a single data structure or in multiple data structures.
-        You will also need to allocate a TCB for the main thread of the application
-        (process). Its state will be RUNNING initially. You will also assign a unique thread
-        identifier to the main thread. It can be 1)
+int  tsl_init(int salg) {
+    // Ensure the library is not already initialized
+    if (library_state != NULL) {
+        fprintf(stderr, "Library is already initialized.\n");
+        return TSL_ERROR;
+    }
 
-        Not that you will mainly call getcontext() from inside tsl yield(),
-        which is doing a context switch to another thread. You will also call it in tsl -
-        init() and tsl create thread() where you will allocate and initialize a TCB
-        for the main thread and a new thread
-     */
+    // Allocate memory for the library state
+    library_state = (TSL_Library_State *)malloc(sizeof(TSL_Library_State));
+    if (library_state == NULL) {
+        fprintf(stderr, "Failed to allocate memory for library state.\n");
+        return TSL_ERROR;
+    }
 
-    return (0);
-    // we put return(0) as a placeholder.
-    // read project about what to return.
-    //and change return() accordingly. 
+    // Set the scheduling algorithm
+    library_state->scheduling_algorithm = salg;
+
+    // Allocate and initialize the TCB for the main thread
+    library_state->main_thread_tcb = (TCB *)malloc(sizeof(TCB));
+    if (library_state->main_thread_tcb == NULL) {
+        fprintf(stderr, "Failed to allocate TCB for the main thread.\n");
+        free(library_state);
+        library_state = NULL;
+        return TSL_ERROR;
+    }
+
+    // Initialize the main thread TCB, e.g., getting its context, setting its state and ID
+    // This is simplified here and should be expanded according to your project requirements
+    library_state->main_thread_tcb->tid = 1; // Assigning a unique identifier to the main thread
+    library_state->main_thread_tcb->state = TSL_RUNNING; // Assuming RUNNING is a defined state
+
+    // If necessary, initialize your ready queue and other data structures here
+
+    return 0; // Success
 }
 
 
