@@ -45,7 +45,7 @@ main(int argc, char **argv)
     printf("main: The value of ucontext_t.uc_stack is 0x%x\n", (unsigned int)con.uc_stack.ss_sp);
     // maybe we don't need to use uc_stack in this project.
 
-    
+
     // call a function
     foo(10, 20, 30); // call foo(), which is getting and printing the context.
     

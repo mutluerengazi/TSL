@@ -129,6 +129,10 @@ int tsl_create_thread(void (*tsf)(void *), void *targ) {
     // Add new_thread_tcb to your scheduler's ready queue here
 
     library_state->num_threads++; // Assuming you're keeping track of thread count
+    library_state->current_thread->tid = new_thread_tcb->tid;
+
+    //setcontext(&new_thread_tcb->context);
+    thread_stub(tsf, targ);
 
     return new_thread_tcb->tid;
 }
@@ -191,6 +195,7 @@ int tsl_join(int tid)
 
 int tsl_cancel(int tid)
 {
+
     return (0);
 }
 
