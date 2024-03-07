@@ -68,6 +68,13 @@ int  tsl_init(int salg) {
     // This is simplified here and should be expanded according to your project requirements
     // library_state->main_thread_tcb->tid = 1; // Assigning a unique identifier to the main thread
     // library_state->main_thread_tcb->state = TSL_RUNNING; // Assuming RUNNING is a defined state
+    // Initialize the main thread TCB, e.g., getting its context, setting its state and ID
+    // You should uncomment or complete these lines based on your implementation details
+    library_state->main_thread_tcb->tid = TID_MAIN; // Assigning a unique identifier to the main thread
+    library_state->main_thread_tcb->state = TSL_RUNNING; // Assuming RUNNING is a defined state
+
+    // Set the current thread to the main thread's TCB
+    library_state->current_thread = library_state->main_thread_tcb;
 
     // If necessary, initialize your ready queue and other data structures here
 
@@ -87,6 +94,7 @@ int tsl_create_thread(void (*tsf)(void *), void *targ) {
         fprintf(stderr, "Failed to allocate memory for new thread TCB.\n");
         return TSL_ERROR;
     }
+
 
     // Initialize the context for the new thread
     if (getcontext(&new_thread_tcb->context) == -1) {
@@ -126,7 +134,7 @@ int tsl_create_thread(void (*tsf)(void *), void *targ) {
 }
 
 
-void thread_stub(void (*tsf)(void *), void *targ) {
+static void thread_stub(void (*tsf)(void *), void *targ) {
     tsf(targ); // Call the thread start function with the argument
     tsl_exit(); // Terminate the thread when the start function returns
 }
@@ -187,7 +195,11 @@ int tsl_cancel(int tid)
 }
 
 
-int tsl_gettid()
-{
-    return (0);
+int tsl_gettid() {
+    if (library_state != NULL && library_state->current_thread != NULL) {
+        return library_state->current_thread->tid;
+    } else {
+        // This may indicate that the library is not initialized, or no thread is running.
+        return TSL_ERROR;
+    }
 }

@@ -3,29 +3,30 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include "tsl.h"
-#define MAXCOUNT 1000
+#define MAXCOUNT 5
 #define YIELDPERIOD 100
 
-void *foo(void *v)
-{
-	int count = 1;
-    int mytid;
-    
-    mytid = tsl_gettid();
-    printf ("thread %d started running (first time);  at the start function\n", mytid);
 
-	//while (count < MAXCOUNT) {
+void foo(void *v) {  // Changed from `void *foo(void *v)` to `void foo(void *v)`
+    int count = 1;
+    int mytid;
+
+    mytid = tsl_gettid();
+    printf("thread %d started running (first time); at the start function\n", mytid);
+
     while (1) {
-        printf ("thread %d is running (count=%d)\n", mytid, count);
-		if (count % YIELDPERIOD == 0) {
-			tsl_yield (TSL_ANY);
-		}
+        printf("thread %d is running (count=%d)\n", mytid, count);
+        if (count % YIELDPERIOD == 0) {
+            tsl_yield(TSL_ANY);
+        }
         count++;
         if (count == MAXCOUNT)
-                break;
-	}
-	return (NULL); 
+            break;
+    }
+    // Since the function now returns void, we remove the return statement.
 }
+
+
 
 
 int main(int argc, char *argv[]) {
