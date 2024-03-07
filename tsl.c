@@ -32,6 +32,10 @@ int tsl_gettid();
 
 TSL_Library_State *library_state = NULL;
 
+static void thread_stub(void (*tsf)(void *), void *targ);
+int generate_tid();
+
+int tid_assign = 1;
 
 int  tsl_init(int salg) {
     // Ensure the library is not already initialized
@@ -47,8 +51,9 @@ int  tsl_init(int salg) {
         return TSL_ERROR;
     }
 
-    // Set the scheduling algorithm
+    // Set the scheduling algorithm and initialize num_threads
     library_state->scheduling_algorithm = salg;
+    library_state->num_threads = 1; // Starting with the main thread
 
     // Allocate and initialize the TCB for the main thread
     library_state->main_thread_tcb = (TCB *)malloc(sizeof(TCB));
@@ -61,8 +66,8 @@ int  tsl_init(int salg) {
 
     // Initialize the main thread TCB, e.g., getting its context, setting its state and ID
     // This is simplified here and should be expanded according to your project requirements
-    library_state->main_thread_tcb->tid = 1; // Assigning a unique identifier to the main thread
-    library_state->main_thread_tcb->state = TSL_RUNNING; // Assuming RUNNING is a defined state
+    // library_state->main_thread_tcb->tid = 1; // Assigning a unique identifier to the main thread
+    // library_state->main_thread_tcb->state = TSL_RUNNING; // Assuming RUNNING is a defined state
 
     // If necessary, initialize your ready queue and other data structures here
 
@@ -71,34 +76,66 @@ int  tsl_init(int salg) {
 
 
 
-int tsl_create_thread(void (*tsf)(void *), void *targ)
-{
-    /*
-        The new thread will start its execution at
-        the specified function tsf, i.e., the thread start function (or root function).
-        The application will define this thread start function, and its address will be
-        passed to tsl create thread() as the first argument. The start function
-        can take one parameter of type void *. Therefore, the second argument to
-        the tsl create thread() function, i.e., targ, is a pointer that can point
-        to a value or structure that will be passed to the thread start function. If
-        nothing is to be passed, NULL can be specified as the second argument to
-        tsl create thread().
-        As the return value, the integer identifier (tid) of the created thread will
-        be returned. Your library will assign a unique positive integer identifier to
-        every thread, including the main thread.
-        If the new thread could not be created due to some reason, then -1
-        (TSL ERROR) will be returned as the return value.
-        After creating the new thread, the main thread can continue running
-        until it calls the tsl yield() function.
+int tsl_create_thread(void (*tsf)(void *), void *targ) {
+    if (!library_state || library_state->num_threads >= TSL_MAXTHREADS - 1) {
+        fprintf(stderr, "Library is not initialized or max thread count exceeded.\n");
+        return TSL_ERROR;
+    }
 
-        Not that you will mainly call getcontext() from inside tsl yield(),
-        which is doing a context switch to another thread. You will also call it in tsl -
-        init() and tsl create thread() where you will allocate and initialize a TCB
-        for the main thread and a new thread
-    */
-    return (0);
+    TCB *new_thread_tcb = (TCB *)malloc(sizeof(TCB));
+    if (new_thread_tcb == NULL) {
+        fprintf(stderr, "Failed to allocate memory for new thread TCB.\n");
+        return TSL_ERROR;
+    }
+
+    // Initialize the context for the new thread
+    if (getcontext(&new_thread_tcb->context) == -1) {
+        free(new_thread_tcb);
+        fprintf(stderr, "Failed to get context for new thread.\n");
+        return TSL_ERROR;
+    }
+
+    new_thread_tcb->stack = (char *)malloc(TSL_STACKSIZE);
+    if (new_thread_tcb->stack == NULL) {
+        free(new_thread_tcb);
+        fprintf(stderr, "Failed to allocate stack for new thread.\n");
+        return TSL_ERROR;
+    }
+
+    new_thread_tcb->context.uc_stack.ss_sp = new_thread_tcb->stack;
+    new_thread_tcb->context.uc_stack.ss_size = TSL_STACKSIZE;
+    new_thread_tcb->context.uc_link = 0; // No successor context
+
+    // Adjusting for x86_64 architecture specifics
+    new_thread_tcb->context.uc_mcontext.gregs[REG_EIP] = (greg_t)thread_stub;
+    new_thread_tcb->context.uc_mcontext.gregs[REG_ESP] = (greg_t)(new_thread_tcb->stack + TSL_STACKSIZE - sizeof(void *) * 2); // Stack grows downward
+
+    // Place `tsf` and `targ` on the new thread's stack for `thread_stub` to use
+    void **stack_top = (void **)(new_thread_tcb->context.uc_mcontext.gregs[REG_ESP]);
+    stack_top[0] = tsf;
+    stack_top[1] = targ;
+
+    new_thread_tcb->tid = generate_tid(); // Assuming generate_tid() generates a unique ID
+    new_thread_tcb->state = READY;
+
+    // Add new_thread_tcb to your scheduler's ready queue here
+
+    library_state->num_threads++; // Assuming you're keeping track of thread count
+
+    return new_thread_tcb->tid;
 }
 
+
+void thread_stub(void (*tsf)(void *), void *targ) {
+    tsf(targ); // Call the thread start function with the argument
+    tsl_exit(); // Terminate the thread when the start function returns
+}
+
+int generate_tid() {
+
+    tid_assign++;
+    return tid_assign;
+}
 
 
 int tsl_yield(int tid)

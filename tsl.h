@@ -26,15 +26,16 @@ typedef enum {
 } ThreadState;
 
 typedef struct TCB {
-int tid; // thread identifier
-unsigned int state; // thread state
-ucontext_t context; // pointer to context structure
-char *stack; // pointer to stack
+    int tid; // thread identifier
+    unsigned int state; // thread state
+    ucontext_t context; // pointer to context structure
+    char *stack; // pointer to stack
 } TCB;
 
 typedef struct tsl_library_state {
     int scheduling_algorithm; // The scheduling algorithm being used
     TCB *main_thread_tcb;     // TCB for the main thread
+        int num_threads;          // The number of threads currently managed by the library
     // Add structures for managing TCBs and the ready queue here
 } TSL_Library_State;
 
