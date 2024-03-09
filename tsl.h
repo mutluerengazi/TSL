@@ -27,7 +27,7 @@ typedef enum {
 
 typedef struct TCB {
     int tid; // thread identifier
-    unsigned int state; // thread state
+    int state; // thread state
     ucontext_t context; // pointer to context structure
     char *stack; // pointer to stack
 } TCB;
@@ -40,6 +40,15 @@ typedef struct tsl_library_state {
     // Add structures for managing TCBs and the ready queue here
 } TSL_Library_State;
 
+typedef struct TCBNode {
+    struct TCB *tcb;
+    struct TCBNode *next;
+} TCBNode;
+
+typedef struct queue {
+    struct TCBNode *head;
+    int numOfThreads;
+} queue;
 
 
 int tsl_init(int salg);

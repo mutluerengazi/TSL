@@ -30,6 +30,9 @@ int tsl_join(int tid);
 int tsl_cancel(int tid);
 int tsl_gettid();
 
+struct queue *ReadyQueue;
+struct queue *WaitQueue;
+
 TSL_Library_State *library_state = NULL;
 
 static void thread_stub(void (*tsf)(void *), void *targ);
@@ -77,6 +80,13 @@ int  tsl_init(int salg) {
     library_state->current_thread = library_state->main_thread_tcb;
 
     // If necessary, initialize your ready queue and other data structures here
+    ReadyQueue = (struct queue *) malloc(sizeof (struct queue));
+    ReadyQueue->head = (struct TCBNode *) malloc(sizeof (struct TCBNode));
+    ReadyQueue->head->next = NULL;
+    ReadyQueue->head->tcb = (struct TCB *) malloc(sizeof (struct TCB));
+    ReadyQueue->head->tcb->tid = TID_MAIN;
+    ReadyQueue->head->tcb->state = READY;
+    ReadyQueue->numOfThreads = 1;
 
     return 0; // Success
 }
@@ -94,7 +104,6 @@ int tsl_create_thread(void (*tsf)(void *), void *targ) {
         fprintf(stderr, "Failed to allocate memory for new thread TCB.\n");
         return TSL_ERROR;
     }
-
 
     // Initialize the context for the new thread
     if (getcontext(&new_thread_tcb->context) == -1) {
@@ -127,6 +136,15 @@ int tsl_create_thread(void (*tsf)(void *), void *targ) {
     new_thread_tcb->state = READY;
 
     // Add new_thread_tcb to your scheduler's ready queue here
+    TCBNode *new_tcb_node = (struct TCBNode *) malloc(sizeof (struct TCBNode));
+    new_tcb_node->tcb = new_thread_tcb;
+
+    TCBNode *last = ReadyQueue->head;
+    while (last->next){
+        last = last->next;
+    }
+    last->next = new_tcb_node;
+    ReadyQueue->numOfThreads = ReadyQueue->numOfThreads + 1;
 
     library_state->num_threads++; // Assuming you're keeping track of thread count
     library_state->current_thread->tid = new_thread_tcb->tid;
@@ -144,7 +162,6 @@ static void thread_stub(void (*tsf)(void *), void *targ) {
 }
 
 int generate_tid() {
-
     tid_assign++;
     return tid_assign;
 }
@@ -198,7 +215,6 @@ int tsl_cancel(int tid)
 
     return (0);
 }
-
 
 int tsl_gettid() {
     if (library_state != NULL && library_state->current_thread != NULL) {
