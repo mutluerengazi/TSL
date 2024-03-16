@@ -173,39 +173,50 @@ int tsl_yield(int tid)
     if(tid == TSL_ANY){
         //schedule algorithm
     }// if current tid = tid
-    else if(tid == ReadyQueue->head->tcb->tid){
+    else if(tid ==  ReadyQueue->head->tcb->tid){
         printf("KENDIMDEYIM\n");
-    }else{
+        printf("READY QUEUE: %d\n", ReadyQueue->head->tcb->tid);
+    }
+    else
+    {
         printf("SELAM123123\n");
         //adding current thread to ready queue
-        printf("READY QUEUE: %d", ReadyQueue->head->next->tcb->tid);
-
+        printf("READY QUEUE: %d", ReadyQueue->head->tcb->tid);
+        printf("SELAM123123\n");
         if (ReadyQueue->head == NULL)
         {
             printf("Queue empty... \n");
             return TSL_ERROR;
         }
-
+        printf("SELAM123123\n");
         // current thread is at the ready que
         TCBNode *prev_node = NULL;
         TCBNode *node_to_yield = ReadyQueue->head;
+        
         if (node_to_yield->tcb->tid == tid)
         {
+           
             getcontext(&(node_to_yield->tcb->context));
             if (context_flag == 0)
             {
                 context_flag = 1; 
                 setcontext(&(node_to_yield->tcb->context));
+                
+
             }
             else
             {
                 context_flag = 0;
                 return ReadyQueue->head->tcb->tid;
             }
-        }else
+        }
+        else
         {
+             
             while (node_to_yield){
+               
                 if (node_to_yield->tcb->tid == tid){
+                    
                     break;
                 }
                 prev_node = node_to_yield;
@@ -213,30 +224,36 @@ int tsl_yield(int tid)
             }
             if (node_to_yield)
             {
+                
                 prev_node->next = node_to_yield->next;
                 node_to_yield->next = ReadyQueue->head;
                 ReadyQueue->head = node_to_yield;
-
+               
                 ReadyQueue->head->next->tcb->state = READY;
                 ReadyQueue->head->tcb->state = TSL_RUNNING;
 
                 int return_id = ReadyQueue->head->tcb->tid;
+                
 
                 getcontext(&(ReadyQueue->head->next->tcb->context));
-
+                
                 if(context_flag == 0)
                 {
+                    printf("anan12\n");
                     context_flag = 1;
+                    //printf("ready queue context %d\n", ReadyQueue->head->tcb->context);
                     setcontext(&(ReadyQueue->head->tcb->context));
+                    printf("anan123\n");
                 }else{
                     context_flag = 0;
                     return return_id;
                 }
             
             }
-        
+            printf("SELAM123123\n");
+
         }
-        return TSL_ERROR;
+        
     }
     return (0);
 }

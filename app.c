@@ -55,7 +55,7 @@ int main(int argc, char *argv[]) {
     tids[0] = 1; // Assuming the main thread ID is 1 as set by tsl_init
     tids[1] = tsl_create_thread(foo, NULL);
     tids[2] = tsl_create_thread(foo, NULL);
-    tsl_yield(2);
+    tsl_yield(3);
 
 
     printf("main thread calling tsl_exit\n");
