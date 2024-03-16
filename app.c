@@ -17,7 +17,7 @@ void foo(void *v) {  // Changed from `void *foo(void *v)` to `void foo(void *v)`
     while (1) {
         printf("thread %d is running (count=%d)\n", mytid, count);
         if (count % YIELDPERIOD == 0) {
-            tsl_yield(TSL_ANY);
+            printf("BABAN ve ANNEN");
         }
         count++;
         if (count == MAXCOUNT)
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
 
     for (i = 1; i < numthreads; ++i) {
         printf("main: waiting for thread %d\n", tids[i]);
-        tsl_join(tids[i]);
+        tsl_yield(tids[i]);
         printf("main: thread %d finished\n", tids[i]);
     }
 

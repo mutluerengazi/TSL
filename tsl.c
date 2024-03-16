@@ -123,7 +123,7 @@ int tsl_create_thread(void (*tsf)(void *), void *targ) {
     new_thread_tcb->context.uc_stack.ss_size = TSL_STACKSIZE;
     new_thread_tcb->context.uc_link = 0; // No successor context
 
-    // Adjusting for x86_64 architecture specifics
+    // Adjusting for x86 architecture specifics
     new_thread_tcb->context.uc_mcontext.gregs[REG_EIP] = (greg_t)thread_stub;
     new_thread_tcb->context.uc_mcontext.gregs[REG_ESP] = (greg_t)(new_thread_tcb->stack + TSL_STACKSIZE - sizeof(void *) * 2); // Stack grows downward
 
@@ -149,9 +149,6 @@ int tsl_create_thread(void (*tsf)(void *), void *targ) {
     library_state->num_threads++; // Assuming you're keeping track of thread count
     library_state->current_thread->tid = new_thread_tcb->tid;
 
-    //setcontext(&new_thread_tcb->context);
-    thread_stub(tsf, targ);
-
     return new_thread_tcb->tid;
 }
 
@@ -169,32 +166,74 @@ int generate_tid() {
 
 int tsl_yield(int tid)
 {
-    /*
-        With this function, a running caller (calling)
-        thread will yield (give) the cpu to some other thread. A context-switch from
-        the caller thread to another thread should happen.
-        If the tid parameter is equal to the tid of an existing thread, then that
-        thread should be selected as the thread to run next. If tid parameter is equal
-        to the special value 0 (TSL ANY) the next thread to run will be selected from
-        the ready queue according to a scheduling algorithm.
-        After selecting the next thread to run, the selected thread’s saved con-
-        text will be reloaded to the CPU and the selected thread will start execution.
-        If there is no other thread in the ready state other than the calling
-        thread, the scheduler needs to select the calling thread to run next. That
-        means, in this case, your library will save the calling thread context first and
-        then restore it.
-        If tid parameter is a positive integer but there is no ready thread
-        with that tid, the function will return immediately without yielding to any
-        thread. In this case it will return -1 as the return value. Otherwise, the
-        return value should be the tid of the thread to whom the cpu is yielded.
-        Note that this function will not return immediately to the caller, but
-        will return later when the calling thread (caller) is re-scheduled again.
+    int context_flag = 0;
+    
+    if(tid == TSL_ANY){
+        //schedule algorithm
+    }// if current tid = tid
+    else if(tid == &library_state->current_thread->tid){
 
-        Not that you will mainly call getcontext() from inside tsl yield(),
-        which is doing a context switch to another thread. You will also call it in tsl -
-        init() and tsl create thread() where you will allocate and initialize a TCB
-        for the main thread and a new thread
-     */
+    }else{
+        //adding current thread to ready queue
+        TCB* current = &library_state->current_thread;
+        current->state = READY;
+        if (ReadyQueue->head == NULL)
+        {
+            printf("Queue empty... \n");
+            return TSL_ERROR;
+        }
+        // current thread is at the ready que
+        TCBNode *prev_node = NULL;
+        TCBNode *node_to_yield = ReadyQueue->head;
+        if (node_to_yield->tcb->tid == tid)
+        {
+            getcontext(&node_to_yield->tcb->context);
+            if (context_flag == 0)
+            {
+                context_flag = 1; 
+                setcontext(&(node_to_yield->tcb->context));
+            }
+            else
+            {
+                context_flag = 0;
+                return ReadyQueue->head->tcb->tid;
+            }
+        }else
+        {
+            while (node_to_yield){
+                if (node_to_yield->tcb->tid == tid){
+                    break;
+                }
+                prev_node = node_to_yield;
+                node_to_yield = node_to_yield->next;
+            }
+            if (node_to_yield)
+            {
+                prev_node->next = node_to_yield->next;
+                node_to_yield->next = ReadyQueue->head;
+                ReadyQueue->head = node_to_yield;
+
+                ReadyQueue->head->next->tcb->state = READY;
+                ReadyQueue->head->tcb->state = TSL_RUNNING;
+
+                int return_id = ReadyQueue->head->tcb->tid;
+
+                getcontext(&(ReadyQueue->head->next->tcb->context));
+
+                if(context_flag == 0)
+                {
+                    context_flag = 1;
+                    setcontext(&(ReadyQueue->head->tcb->context));
+                }else{
+                    context_flag = 0;
+                    return return_id;
+                }
+            
+            }
+        
+        }
+        return TSL_ERROR;
+    }
     return (0);
 }
 

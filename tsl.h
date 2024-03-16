@@ -18,7 +18,7 @@
 #define TSL_ANY 0  // yield to a thread selected with a scheduling alg.
 #define TSL_ERROR  -1  // there is an error in the function execution.
 #define TSL_SUCCESS 0  // function execution success
-
+ 
 typedef enum {
     TSL_RUNNING, // Running state
     READY,   // Ready state
