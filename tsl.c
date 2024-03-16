@@ -94,6 +94,7 @@ int  tsl_init(int salg) {
 
 
 int tsl_create_thread(void (*tsf)(void *), void *targ) {
+    printf("girdim \n");
     if (!library_state || library_state->num_threads >= TSL_MAXTHREADS - 1) {
         fprintf(stderr, "Library is not initialized or max thread count exceeded.\n");
         return TSL_ERROR;
@@ -148,7 +149,7 @@ int tsl_create_thread(void (*tsf)(void *), void *targ) {
 
     library_state->num_threads++; // Assuming you're keeping track of thread count
     library_state->current_thread->tid = new_thread_tcb->tid;
-
+    printf("ciktim \n");
     return new_thread_tcb->tid;
 }
 
@@ -166,28 +167,31 @@ int generate_tid() {
 
 int tsl_yield(int tid)
 {
+    printf("SELAM\n");
     int context_flag = 0;
     
     if(tid == TSL_ANY){
         //schedule algorithm
     }// if current tid = tid
-    else if(tid == &library_state->current_thread->tid){
-
+    else if(tid == ReadyQueue->head->tcb->tid){
+        printf("KENDIMDEYIM\n");
     }else{
+        printf("SELAM123123\n");
         //adding current thread to ready queue
-        TCB* current = &library_state->current_thread;
-        current->state = READY;
+        printf("READY QUEUE: %d", ReadyQueue->head->next->tcb->tid);
+
         if (ReadyQueue->head == NULL)
         {
             printf("Queue empty... \n");
             return TSL_ERROR;
         }
+
         // current thread is at the ready que
         TCBNode *prev_node = NULL;
         TCBNode *node_to_yield = ReadyQueue->head;
         if (node_to_yield->tcb->tid == tid)
         {
-            getcontext(&node_to_yield->tcb->context);
+            getcontext(&(node_to_yield->tcb->context));
             if (context_flag == 0)
             {
                 context_flag = 1; 

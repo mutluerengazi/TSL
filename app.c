@@ -31,7 +31,6 @@ void foo(void *v) {  // Changed from `void *foo(void *v)` to `void foo(void *v)`
 
 int main(int argc, char *argv[]) {
     int *tids;
-    int i;
     int numthreads = 0;
 
     if (argc != 2) {
@@ -54,22 +53,10 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     tids[0] = 1; // Assuming the main thread ID is 1 as set by tsl_init
+    tids[1] = tsl_create_thread(foo, NULL);
+    tids[2] = tsl_create_thread(foo, NULL);
+    tsl_yield(2);
 
-    for (i = 1; i < numthreads; ++i) {
-        tids[i] = tsl_create_thread(foo, NULL);
-        if (tids[i] == TSL_ERROR) {
-            fprintf(stderr, "Failed to create thread.\n");
-            // Handle error as appropriate, perhaps by cleaning up and exiting
-        } else {
-            printf("Thread %d created\n", tids[i]);
-        }
-    }
-
-    for (i = 1; i < numthreads; ++i) {
-        printf("main: waiting for thread %d\n", tids[i]);
-        tsl_yield(tids[i]);
-        printf("main: thread %d finished\n", tids[i]);
-    }
 
     printf("main thread calling tsl_exit\n");
     tsl_exit();
