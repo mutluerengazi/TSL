@@ -94,7 +94,6 @@ int  tsl_init(int salg) {
 
 
 int tsl_create_thread(void (*tsf)(void *), void *targ) {
-    printf("girdim \n");
     if (!library_state || library_state->num_threads >= TSL_MAXTHREADS - 1) {
         fprintf(stderr, "Library is not initialized or max thread count exceeded.\n");
         return TSL_ERROR;
@@ -149,7 +148,6 @@ int tsl_create_thread(void (*tsf)(void *), void *targ) {
 
     library_state->num_threads++; // Assuming you're keeping track of thread count
     library_state->current_thread->tid = new_thread_tcb->tid;
-    printf("ciktim \n");
     return new_thread_tcb->tid;
 }
 
@@ -176,6 +174,15 @@ int tsl_yield(int tid)
     else if(tid ==  ReadyQueue->head->tcb->tid){
         printf("KENDIMDEYIM\n");
         printf("READY QUEUE: %d\n", ReadyQueue->head->tcb->tid);
+        getcontext(&(ReadyQueue->head->tcb->context));
+        if (context_flag == 0) {
+            context_flag = 1;
+            setcontext(&(ReadyQueue->head->tcb->context));
+        }
+        else{
+            context_flag = 0;
+            return ReadyQueue->head->tcb->tid;
+        }
     }
     else
     {
@@ -192,17 +199,14 @@ int tsl_yield(int tid)
         // current thread is at the ready que
         TCBNode *prev_node = NULL;
         TCBNode *node_to_yield = ReadyQueue->head;
-        
+
         if (node_to_yield->tcb->tid == tid)
         {
-           
             getcontext(&(node_to_yield->tcb->context));
             if (context_flag == 0)
             {
                 context_flag = 1; 
                 setcontext(&(node_to_yield->tcb->context));
-                
-
             }
             else
             {
@@ -212,9 +216,7 @@ int tsl_yield(int tid)
         }
         else
         {
-             
             while (node_to_yield){
-               
                 if (node_to_yield->tcb->tid == tid){
                     
                     break;
@@ -224,7 +226,7 @@ int tsl_yield(int tid)
             }
             if (node_to_yield)
             {
-                
+                getcontext(&(ReadyQueue->head->tcb->context));
                 prev_node->next = node_to_yield->next;
                 node_to_yield->next = ReadyQueue->head;
                 ReadyQueue->head = node_to_yield;
@@ -235,17 +237,15 @@ int tsl_yield(int tid)
                 int return_id = ReadyQueue->head->tcb->tid;
                 
 
-                getcontext(&(ReadyQueue->head->next->tcb->context));
-                
                 if(context_flag == 0)
                 {
                     printf("anan12\n");
                     context_flag = 1;
                     //printf("ready queue context %d\n", ReadyQueue->head->tcb->context);
                     setcontext(&(ReadyQueue->head->tcb->context));
-                    printf("anan123\n");
                 }else{
                     context_flag = 0;
+                    printf("anan123\n");
                     return return_id;
                 }
             
