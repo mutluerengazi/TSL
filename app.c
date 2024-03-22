@@ -12,6 +12,7 @@ void foo(void *v) {  // Changed from `void *foo(void *v)` to `void foo(void *v)`
     int mytid;
 
     mytid = tsl_gettid();
+    printf("foo\n");
     printf("thread %d started running (first time); at the start function\n", mytid);
 
     while (1) {
@@ -53,9 +54,9 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     tids[0] = 1; // Assuming the main thread ID is 1 as set by tsl_init
-    tids[1] = tsl_create_thread(foo, NULL);
-    tids[2] = tsl_create_thread(foo, NULL);
-    printf("tsl yield result: %d \n", tsl_yield(1));
+    tids[1] = tsl_create_thread((void (*)(void *))foo, NULL);
+    //tids[2] = tsl_create_thread((void (*)(void *))foo, NULL);
+    printf("tsl yield result: %d \n", tsl_yield(2));
 
 
     printf("main thread calling tsl_exit\n");

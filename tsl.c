@@ -124,13 +124,13 @@ int tsl_create_thread(void (*tsf)(void *), void *targ) {
     new_thread_tcb->context.uc_link = 0; // No successor context
 
     // Adjusting for x86 architecture specifics
-    new_thread_tcb->context.uc_mcontext.gregs[REG_EIP] = (greg_t)thread_stub;
-    new_thread_tcb->context.uc_mcontext.gregs[REG_ESP] = (greg_t)(new_thread_tcb->stack + TSL_STACKSIZE - sizeof(void *) * 2); // Stack grows downward
+    new_thread_tcb->context.uc_mcontext.gregs[REG_EIP] = (unsigned long)thread_stub;
+    new_thread_tcb->context.uc_mcontext.gregs[REG_ESP] = (unsigned long)(new_thread_tcb->stack + TSL_STACKSIZE - sizeof(void *) * 2); // Stack grows downward
 
     // Place `tsf` and `targ` on the new thread's stack for `thread_stub` to use
     void **stack_top = (void **)(new_thread_tcb->context.uc_mcontext.gregs[REG_ESP]);
-    stack_top[0] = tsf;
-    stack_top[1] = targ;
+    stack_top[0] = targ;
+    stack_top[1] = tsf;
 
     new_thread_tcb->tid = generate_tid(); // Assuming generate_tid() generates a unique ID
     new_thread_tcb->state = READY;
@@ -188,7 +188,7 @@ int tsl_yield(int tid)
     {
         printf("SELAM123123\n");
         //adding current thread to ready queue
-        printf("READY QUEUE: %d", ReadyQueue->head->tcb->tid);
+        printf("READY QUEUE: %d \n", ReadyQueue->head->tcb->tid);
         printf("SELAM123123\n");
         if (ReadyQueue->head == NULL)
         {
@@ -216,39 +216,44 @@ int tsl_yield(int tid)
         }
         else
         {
-            while (node_to_yield){
-                if (node_to_yield->tcb->tid == tid){
-                    
-                    break;
+            int return_id = ReadyQueue->head->tcb->tid;
+            getcontext(&(ReadyQueue->head->tcb->context));
+            if(context_flag == 0){
+                while (node_to_yield){
+                    if (node_to_yield->tcb->tid == tid){
+                        break;
+                    }
+                    prev_node = node_to_yield;
+                    node_to_yield = node_to_yield->next;
                 }
-                prev_node = node_to_yield;
-                node_to_yield = node_to_yield->next;
-            }
-            if (node_to_yield)
-            {
-                getcontext(&(ReadyQueue->head->tcb->context));
-                prev_node->next = node_to_yield->next;
-                node_to_yield->next = ReadyQueue->head;
-                ReadyQueue->head = node_to_yield;
-               
-                ReadyQueue->head->next->tcb->state = READY;
-                ReadyQueue->head->tcb->state = TSL_RUNNING;
-
-                int return_id = ReadyQueue->head->tcb->tid;
-                
-
-                if(context_flag == 0)
+                if (node_to_yield)
                 {
+                    
+                    printf("node to yield tid1: %d \n", node_to_yield->tcb->tid);
+                    prev_node->next = node_to_yield->next;
+                    node_to_yield->next = ReadyQueue->head;
+                    ReadyQueue->head = node_to_yield;
+                
+                    ReadyQueue->head->next->tcb->state = READY;
+                    ReadyQueue->head->tcb->state = TSL_RUNNING;
+
+                   
+                    
+                    //getcontext(&(node_to_yield->tcb->context));
+                    printf("node to yield tid2: %d \n", node_to_yield->tcb->tid);
+
+            
                     printf("anan12\n");
                     context_flag = 1;
                     //printf("ready queue context %d\n", ReadyQueue->head->tcb->context);
-                    setcontext(&(ReadyQueue->head->tcb->context));
-                }else{
-                    context_flag = 0;
-                    printf("anan123\n");
-                    return return_id;
+                    setcontext(&(node_to_yield->tcb->context));
+                
                 }
-            
+            }
+            else{
+                context_flag = 0;
+                printf("anan123\n");
+                return return_id;
             }
             printf("SELAM123123\n");
 
