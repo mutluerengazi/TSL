@@ -65,9 +65,6 @@ int main(int argc, char *argv[]) {
   printf("main thread calling exit\n");
   
   free(tids);
-  exit(0);
-
    // Don't forget to free the allocated memory
-  
   return 0;
 }
