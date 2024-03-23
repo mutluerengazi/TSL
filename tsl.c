@@ -173,9 +173,30 @@ int tsl_yield(int tid) {
 
   if (tid == TSL_ANY) {
     if (library_state->scheduling_algorithm == ALG_FCFS) {
-      printf("FCFS scheduling...");
-      TCBNode *prev_node = NULL;
-      TCBNode *node_to_yield = ReadyQueue->head;
+      getcontext(&(ReadyQueue->head->tcb->context));
+
+      if (context_flag == 0) {
+        printf("FCFS scheduling...");
+        TCBNode *curr_head = ReadyQueue->head;
+        if (curr_head->next == NULL) {
+          printf("Next is empty...");
+          return TSL_ERROR;
+        }
+        TCBNode *prev_node = NULL;
+        TCBNode *node_to_yield = curr_head->next;
+        ReadyQueue->head = node_to_yield;
+        while (node_to_yield) {
+          prev_node = node_to_yield;
+          node_to_yield = node_to_yield->next;
+        }
+        prev_node->next = curr_head;
+        curr_head->next = NULL;
+        context_flag = 1;
+        setcontext(&(ReadyQueue->head->tcb->context));
+      } else {
+        context_flag = 0;
+        return ReadyQueue->head->tcb->tid;
+      }
     }
   } // if current tid = tid
   else if (tid == ReadyQueue->head->tcb->tid) {
