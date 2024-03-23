@@ -10,6 +10,8 @@
 
 #include "tsl.h"
 #include <ucontext.h>
+#include <stdlib.h>
+#include <time.h>
 // Define constants for scheduling algorithms if not already defined
 #ifndef SCHED_ALG_1
 #define SCHED_ALG_1 1
@@ -44,7 +46,7 @@ int tsl_init(int salg) {
     fprintf(stderr, "Library is already initialized.\n");
     return TSL_ERROR;
   }
-
+  printf("salg %d \n", salg);
   // Allocate memory for the library state
   library_state = (TSL_Library_State *)malloc(sizeof(TSL_Library_State));
   if (library_state == NULL) {
@@ -169,6 +171,7 @@ int generate_tid() {
 int tsl_yield(int tid) {
   printf("*************************** tsl yield entered "
          "***************************\n");
+  //printf("scheduling algo %d \n",   library_state->scheduling_algorithm);
   int context_flag = 0;
 
   if (tid == TSL_ANY) {
@@ -176,7 +179,7 @@ int tsl_yield(int tid) {
       getcontext(&(ReadyQueue->head->tcb->context));
 
       if (context_flag == 0) {
-        printf("FCFS scheduling...");
+        printf("FCFS scheduling...\n");
         TCBNode *curr_head = ReadyQueue->head;
         if (curr_head->next == NULL) {
           printf("Next is empty...");
@@ -197,6 +200,16 @@ int tsl_yield(int tid) {
         context_flag = 0;
         return ReadyQueue->head->tcb->tid;
       }
+    }
+    else if(library_state->scheduling_algorithm == ALG_RANDOM){
+        int randomTid;
+        // Seed the random number generator with the current time
+        srand(time(NULL));
+        // Generate a random number between 1 and number of threads
+        randomTid = rand() % ReadyQueue->numOfThreads + 1;
+        // Print the random number
+        printf("Random number %d\n", randomTid);
+
     }
   } // if current tid = tid
   else if (tid == ReadyQueue->head->tcb->tid) {

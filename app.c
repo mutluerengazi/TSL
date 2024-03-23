@@ -53,6 +53,11 @@ int main(int argc, char *argv[]) {
   tids[0] = 1; // Assuming the main thread ID is 1 as set by tsl_init
   tids[1] = tsl_create_thread((void (*)(void *))foo, NULL);
   tids[2] = tsl_create_thread((void (*)(void *))foo, NULL);
+  tids[3] = tsl_create_thread((void (*)(void *))foo, NULL);
+  tids[4] = tsl_create_thread((void (*)(void *))foo, NULL);
+  tids[5] = tsl_create_thread((void (*)(void *))foo, NULL);
+  tids[6] = tsl_create_thread((void (*)(void *))foo, NULL);
+
   printf("tsl yield result: %d \n", tsl_yield(2));
   printf("tsl yield result: %d \n", tsl_yield(3));
   printf("tsl yield result: %d \n", tsl_yield(2));
