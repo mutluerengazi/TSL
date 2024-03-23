@@ -167,14 +167,20 @@ int generate_tid() {
 }
 
 int tsl_yield(int tid) {
-  printf("tsl yield entered\n");
+  printf("*************************** tsl yield entered "
+         "***************************\n");
   int context_flag = 0;
 
   if (tid == TSL_ANY) {
-    // schedule algorithm
+    if (library_state->scheduling_algorithm == ALG_FCFS) {
+      printf("FCFS scheduling...");
+      TCBNode *prev_node = NULL;
+      TCBNode *node_to_yield = ReadyQueue->head;
+    }
   } // if current tid = tid
   else if (tid == ReadyQueue->head->tcb->tid) {
-    printf("READY QUEUE tid head in kendimdeyim: %d\n", ReadyQueue->head->tcb->tid);
+    printf("READY QUEUE tid head in kendimdeyim: %d\n",
+           ReadyQueue->head->tcb->tid);
     getcontext(&(ReadyQueue->head->tcb->context));
     if (context_flag == 0) {
       context_flag = 1;
@@ -222,14 +228,12 @@ int tsl_yield(int tid) {
 
           printf("node to yield tid1: %d \n", node_to_yield->tcb->tid);
           printf("node to yield state %d\n", node_to_yield->tcb->state);
-          if (ReadyQueue->head->tcb->state == 3)
-          {
-            printf("the tread that to be yielded is ended\n");
+          if (ReadyQueue->head->tcb->state == ENDED) {
+            printf("The thread to be yielded has ended\n");
             return TSL_ERROR;
           }
           ReadyQueue->head->next->tcb->state = READY;
           ReadyQueue->head->tcb->state = TSL_RUNNING;
-
           // getcontext(&(node_to_yield->tcb->context));
           printf("node to yield tid2: %d \n", node_to_yield->tcb->tid);
 
@@ -246,18 +250,16 @@ int tsl_yield(int tid) {
   return (0);
 }
 
-int tsl_exit() { 
-  if(ReadyQueue->head != NULL)
-  {
+int tsl_exit() {
+  if (ReadyQueue->head != NULL) {
     printf("tsl exit tid update: %d \n", ReadyQueue->head->tcb->tid);
     ReadyQueue->head->tcb->state = ENDED;
     printf("tsl exit state update: %d \n", ReadyQueue->head->tcb->state);
-    tsl_yield(1);
-  }
-  else{
+    tsl_yield(0);
+  } else {
     printf("There is no running thread! \n");
   }
-  return (0); 
+  return (0);
 }
 
 int tsl_join(int tid) { return (0); }
@@ -265,7 +267,7 @@ int tsl_join(int tid) { return (0); }
 int tsl_cancel(int tid) { return (0); }
 
 int tsl_gettid() {
-  if (ReadyQueue->head != NULL ) {
+  if (ReadyQueue->head != NULL) {
     return ReadyQueue->head->tcb->tid;
   } else {
     // This may indicate that the library is not initialized, or no thread is
