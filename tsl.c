@@ -176,7 +176,7 @@ int tsl_yield(int tid) {
       getcontext(&(ReadyQueue->head->tcb->context));
 
       if (context_flag == 0) {
-        printf("FCFS scheduling...");
+        printf("FCFS scheduling...\n");
         TCBNode *curr_head = ReadyQueue->head;
         if (curr_head->next == NULL) {
           printf("Next is empty...");
