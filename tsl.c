@@ -9,9 +9,9 @@
 #endif /* __USE_GNU */
 
 #include "tsl.h"
-#include <ucontext.h>
 #include <stdlib.h>
 #include <time.h>
+#include <ucontext.h>
 // Define constants for scheduling algorithms if not already defined
 #ifndef SCHED_ALG_1
 #define SCHED_ALG_1 1
@@ -49,6 +49,7 @@ int tsl_init(int salg) {
   printf("salg %d \n", salg);
   // Allocate memory for the library state
   library_state = (TSL_Library_State *)malloc(sizeof(TSL_Library_State));
+    
   if (library_state == NULL) {
     fprintf(stderr, "Failed to allocate memory for library state.\n");
     return TSL_ERROR;
@@ -67,14 +68,7 @@ int tsl_init(int salg) {
     return TSL_ERROR;
   }
 
-  // Initialize the main thread TCB, e.g., getting its context, setting its
-  // state and ID This is simplified here and should be expanded according to
-  // your project requirements library_state->main_thread_tcb->tid = 1; //
-  // Assigning a unique identifier to the main thread
-  // library_state->main_thread_tcb->state = TSL_RUNNING; // Assuming RUNNING is
-  // a defined state Initialize the main thread TCB, e.g., getting its context,
-  // setting its state and ID You should uncomment or complete these lines based
-  // on your implementation details
+ 
   library_state->main_thread_tcb->tid =
       TID_MAIN; // Assigning a unique identifier to the main thread
   library_state->main_thread_tcb->state =
@@ -171,7 +165,7 @@ int generate_tid() {
 int tsl_yield(int tid) {
   printf("*************************** tsl yield entered "
          "***************************\n");
-  //printf("scheduling algo %d \n",   library_state->scheduling_algorithm);
+  // printf("scheduling algo %d \n",   library_state->scheduling_algorithm);
   int context_flag = 0;
 
   if (tid == TSL_ANY) {
@@ -198,18 +192,138 @@ int tsl_yield(int tid) {
         setcontext(&(ReadyQueue->head->tcb->context));
       } else {
         context_flag = 0;
+        printf("finished...\n");
         return ReadyQueue->head->tcb->tid;
       }
-    }
-    else if(library_state->scheduling_algorithm == ALG_RANDOM){
-        int randomTid;
-        // Seed the random number generator with the current time
-        srand(time(NULL));
-        // Generate a random number between 1 and number of threads
-        randomTid = rand() % ReadyQueue->numOfThreads + 1;
-        // Print the random number
-        printf("Random number %d\n", randomTid);
+    } else if (library_state->scheduling_algorithm == ALG_RANDOM) {
+      
+      getcontext(&(ReadyQueue->head->tcb->context));
+      
+      int randomTid;
+      // Seed the random number generator with the current time
+      srand(time(NULL));
+      // Generate a random number between 1 and number of threads
+      randomTid = rand() % ReadyQueue->numOfThreads + 1;
+      // Print the random number
+      printf("Random number %d\n", randomTid);
+      if (context_flag == 0) {
+        printf("Random scheduling...\n");
+        TCBNode *curr_head = ReadyQueue->head;
+        TCBNode *prev = NULL;
+        TCBNode *temp = ReadyQueue->head;
+        TCBNode *last = ReadyQueue->head;
 
+        if (curr_head->next == NULL) {
+          printf("Next is empty...");
+          return TSL_ERROR;
+        }
+        if (randomTid == curr_head->tcb->tid){
+          context_flag = 1;
+          printf("anan 1\n");
+          setcontext(&(ReadyQueue->head->tcb->context));
+        }
+        while(curr_head->tcb->tid != randomTid){
+          prev = curr_head;
+          curr_head = curr_head->next;
+        }
+        if(curr_head->next == NULL){
+          printf("anan 2\n");
+          context_flag = 1;
+          ReadyQueue->head = curr_head;
+          ReadyQueue->head->next = temp->next;
+          prev->next = temp;
+          temp->next = NULL;
+          setcontext(&(ReadyQueue->head->tcb->context));
+        }
+        else{
+          printf("anan 3\n");
+          context_flag = 1;
+          prev->next = curr_head->next;
+          ReadyQueue->head = curr_head;
+          while(last->next){
+            last = last->next;
+          }
+          curr_head->next = temp->next;
+          last->next = temp;
+          temp->next = NULL;int tsl_yield(int tid) {
+  printf("*************************** tsl yield entered "
+         "***************************\n");
+  // printf("scheduling algo %d \n",   library_state->scheduling_algorithm);
+  int context_flag = 0;
+
+  if (tid == TSL_ANY) {
+    if (library_state->scheduling_algorithm == ALG_FCFS) {
+      getcontext(&(ReadyQueue->head->tcb->context));
+
+      if (context_flag == 0) {
+        printf("FCFS scheduling...\n");
+        TCBNode *curr_head = ReadyQueue->head;
+        if (curr_head->next == NULL) {
+          printf("Next is empty...");
+          return TSL_ERROR;
+        }
+        TCBNode *prev_node = NULL;
+        TCBNode *node_to_yield = curr_head->next;
+        ReadyQueue->head = node_to_yield;
+        while (node_to_yield) {
+          prev_node = node_to_yield;
+          node_to_yield = node_to_yield->next;
+        }
+        prev_node->next = curr_head;
+        curr_head->next = NULL;
+        context_flag = 1;
+        setcontext(&(ReadyQueue->head->tcb->context));
+      } else {
+        context_flag = 0;
+        printf("finished...\n");
+        return ReadyQueue->head->tcb->tid;
+      }
+    } else if (library_state->scheduling_algorithm == ALG_RANDOM) {
+      
+      getcontext(&(ReadyQueue->head->tcb->context));
+      
+      int randomTid;
+      // Seed the random number generator with the current time
+      srand(time(NULL));
+      // Generate a random number between 1 and number of threads
+      randomTid = rand() % ReadyQueue->numOfThreads + 1;
+      // Print the random number
+      printf("Random number %d\n", randomTid);
+      if (context_flag == 0) {
+        printf("Random scheduling...\n");
+        TCBNode *curr_head = ReadyQueue->head;
+        TCBNode *prev = NULL;
+        TCBNode *temp = ReadyQueue->head;
+        TCBNode *last = ReadyQueue->head;
+
+        if (curr_head->next == NULL) {
+          printf("Next is empty...");
+          return TSL_ERROR;
+        }
+        if (randomTid == curr_head->tcb->tid){
+          context_flag = 1;
+          printf("anan 1\n");
+          setcontext(&(ReadyQueue->head->tcb->context));
+        }
+        while(curr_head->tcb->tid != randomTid){
+          prev = curr_head;
+          curr_head = curr_head->next;
+        }
+        if(curr_head->next == NULL){
+          printf("anan 2\n");
+          context_flag = 1;
+          ReadyQueue->head = curr_head;
+          ReadyQueue->head->next = temp->next;
+          prev->next = temp;
+        }
+        prev_node->next = curr_head;
+        curr_head->next = NULL;
+        context_flag = 1;
+        setcontext(&(ReadyQueue->head->tcb->context));
+      } else {
+        context_flag = 0;
+        return ReadyQueue->head->tcb->tid;
+      }
     }
   } // if current tid = tid
   else if (tid == ReadyQueue->head->tcb->tid) {
