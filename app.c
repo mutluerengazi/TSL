@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Assuming ALG_FCFS is defined elsewhere
-  if (tsl_init(ALG_RANDOM) != 0) {
+  if (tsl_init(ALG_FCFS) != 0) {
     fprintf(stderr, "Failed to initialize threading library.\n");
     free(tids);
     exit(1);
@@ -62,9 +62,12 @@ int main(int argc, char *argv[]) {
   printf("tsl yield result: %d \n", tsl_yield(0));
   printf("tsl yield result: %d \n", tsl_yield(2));
 
-  printf("main thread calling tsl_exit\n");
-  tsl_exit();
+  printf("main thread calling exit\n");
+  
+  free(tids);
+  exit(0);
 
-  free(tids); // Don't forget to free the allocated memory
+   // Don't forget to free the allocated memory
+  
   return 0;
 }
