@@ -188,6 +188,11 @@ int tsl_yield(int tid) {
                 }
                 TCBNode *prev_node = NULL;
                 TCBNode *node_to_yield = curr_head->next;
+                if (node_to_yield->tcb->state == ENDED)
+                {
+                  printf("Thread is in ENDED state!\n");
+                  return tsl_yield(0);
+                }
                 curr_head->tcb->state = READY;
                 node_to_yield->tcb->state = TSL_RUNNING;
                 ReadyQueue->head = node_to_yield;
@@ -396,31 +401,16 @@ int tsl_cancel(int tid) {
     }
 
     TCBNode *current_node = ReadyQueue->head;
-    TCBNode *prev_node = NULL;
-
     // Search for the target thread in the ready queue
     while (current_node != NULL) {
         if (current_node->tcb->tid == tid) {
             // Mark the target thread as terminated
             current_node->tcb->state = ENDED;
-
-            // Remove the target thread from the ready queue
-            if (prev_node == NULL) {
-                ReadyQueue->head = current_node->next; // Remove from the head of the queue
-            } else {
-                prev_node->next = current_node->next;
-            }
-
-            // Deallocate resources associated with the terminated thread
-            free(current_node->tcb->stack);
-            free(current_node->tcb);
-            free(current_node);
-
             printf("Thread tid: %d has been cancelled.\n", tid);
             return 0; // Success
         }
-        prev_node = current_node;
         current_node = current_node->next;
+
     }
     // If no thread with the indicated tid is found
     fprintf(stderr, "Thread with tid %d not found.\n", tid);
