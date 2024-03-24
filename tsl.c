@@ -49,7 +49,7 @@ int tsl_init(int salg) {
   printf("salg %d \n", salg);
   // Allocate memory for the library state
   library_state = (TSL_Library_State *)malloc(sizeof(TSL_Library_State));
-    
+
   if (library_state == NULL) {
     fprintf(stderr, "Failed to allocate memory for library state.\n");
     return TSL_ERROR;
@@ -68,7 +68,6 @@ int tsl_init(int salg) {
     return TSL_ERROR;
   }
 
- 
   library_state->main_thread_tcb->tid =
       TID_MAIN; // Assigning a unique identifier to the main thread
   library_state->main_thread_tcb->state =
@@ -163,13 +162,13 @@ int generate_tid() {
 }
 
 int tsl_yield(int tid) {
-  
+
   printf("*************************** tsl yield entered "
          "***************************\n");
   // printf("scheduling algo %d \n",   library_state->scheduling_algorithm);
   int context_flag = 0;
 
-  if (tid == TSL_ANY){
+  if (tid == TSL_ANY) {
     if (library_state->scheduling_algorithm == ALG_FCFS) {
       getcontext(&(ReadyQueue->head->tcb->context));
 
@@ -182,6 +181,8 @@ int tsl_yield(int tid) {
         }
         TCBNode *prev_node = NULL;
         TCBNode *node_to_yield = curr_head->next;
+        curr_head->tcb->state = READY;
+        node_to_yield->tcb->state = TSL_RUNNING;
         ReadyQueue->head = node_to_yield;
         while (node_to_yield) {
           prev_node = node_to_yield;
@@ -194,12 +195,16 @@ int tsl_yield(int tid) {
       } else {
         context_flag = 0;
         printf("finished...\n");
-        return ReadyQueue->head->tcb->tid;
+        if (ReadyQueue->head != NULL) {
+          return ReadyQueue->head->tcb->tid;
+        } else {
+          exit(0);
+        }
       }
     } else if (library_state->scheduling_algorithm == ALG_RANDOM) {
-      
+
       getcontext(&(ReadyQueue->head->tcb->context));
-      
+
       int randomTid;
       // Seed the random number generator with the current time
       srand(time(NULL));
@@ -213,40 +218,46 @@ int tsl_yield(int tid) {
         TCBNode *prev = NULL;
         TCBNode *temp = ReadyQueue->head;
         TCBNode *last = ReadyQueue->head;
-
         if (curr_head->next == NULL) {
           printf("Next is empty...");
           return TSL_ERROR;
         }
-        if (randomTid == curr_head->tcb->tid){
+        curr_head->tcb->state = READY;
+        if (randomTid == curr_head->tcb->tid) {
           context_flag = 1;
           printf("anan 1\n");
+          curr_head->tcb->state = TSL_RUNNING;
           setcontext(&(ReadyQueue->head->tcb->context));
         }
-        while(curr_head->tcb->tid != randomTid){
+        while (curr_head->tcb->tid != randomTid) {
           prev = curr_head;
           curr_head = curr_head->next;
         }
-        if(curr_head->next == NULL){
+        if (curr_head->next == NULL) {
           printf("anan 2\n");
           context_flag = 1;
           ReadyQueue->head = curr_head;
           ReadyQueue->head->next = temp->next;
           prev->next = temp;
           temp->next = NULL;
+          ReadyQueue->head->tcb->state = TSL_RUNNING;
           setcontext(&(ReadyQueue->head->tcb->context));
-        }
-        else{
+        } else {
           printf("anan 3\n");
           context_flag = 1;
           prev->next = curr_head->next;
           ReadyQueue->head = curr_head;
-          while(last->next){
+          while (last->next) {
             last = last->next;
           }
           curr_head->next = temp->next;
           last->next = temp;
-          temp->next = NULL;int tsl_yield(int tid) ;}
+          temp->next = NULL;
+          ReadyQueue->head->tcb->state = TSL_RUNNING;
+          setcontext(&(ReadyQueue->head->tcb->context));
+        }
+      } else {
+        return ReadyQueue->head->tcb->tid;
       }
     }
   } // if current tid = tid
@@ -261,8 +272,7 @@ int tsl_yield(int tid) {
       context_flag = 0;
       return ReadyQueue->head->tcb->tid;
     }
-  } 
-  else {
+  } else {
     // adding current thread to ready queue
     printf("READY QUEUE tid head in else: %d \n", ReadyQueue->head->tcb->tid);
     if (ReadyQueue->head == NULL) {
@@ -283,43 +293,41 @@ int tsl_yield(int tid) {
         context_flag = 0;
         return ReadyQueue->head->tcb->tid;
       }
-      } 
-      else {
-        int return_id = ReadyQueue->head->tcb->tid;
-        getcontext(&(ReadyQueue->head->tcb->context));
-        if (context_flag == 0) {
-          while (node_to_yield) {
-            if (node_to_yield->tcb->tid == tid) {
-              break;
-            }
-            prev_node = node_to_yield;
-            node_to_yield = node_to_yield->next;
+    } else {
+      int return_id = ReadyQueue->head->tcb->tid;
+      getcontext(&(ReadyQueue->head->tcb->context));
+      if (context_flag == 0) {
+        while (node_to_yield) {
+          if (node_to_yield->tcb->tid == tid) {
+            break;
           }
-          if (node_to_yield) {
-            prev_node->next = node_to_yield->next;
-            node_to_yield->next = ReadyQueue->head;
-            ReadyQueue->head = node_to_yield;
-
-            printf("node to yield tid1: %d \n", node_to_yield->tcb->tid);
-            printf("node to yield state %d\n", node_to_yield->tcb->state);
-            if (ReadyQueue->head->tcb->state == ENDED) {
-              printf("The thread to be yielded has ended\n");
-              return TSL_ERROR;
-            }
-            ReadyQueue->head->next->tcb->state = READY;
-            ReadyQueue->head->tcb->state = TSL_RUNNING;
-            // getcontext(&(node_to_yield->tcb->context));
-            printf("node to yield tid2: %d \n", node_to_yield->tcb->tid);
-
-            context_flag = 1;
-            // printf("ready queue context %d\n", ReadyQueue->head->tcb->context);
-            setcontext(&(node_to_yield->tcb->context));
-          }
-        } 
-        else {
-          context_flag = 0;
-          return return_id;
+          prev_node = node_to_yield;
+          node_to_yield = node_to_yield->next;
         }
+        if (node_to_yield) {
+          prev_node->next = node_to_yield->next;
+          node_to_yield->next = ReadyQueue->head;
+          ReadyQueue->head = node_to_yield;
+
+          printf("node to yield tid1: %d \n", node_to_yield->tcb->tid);
+          printf("node to yield state %d\n", node_to_yield->tcb->state);
+          if (ReadyQueue->head->tcb->state == ENDED) {
+            printf("The thread to be yielded has ended\n");
+            return TSL_ERROR;
+          }
+          ReadyQueue->head->next->tcb->state = READY;
+          ReadyQueue->head->tcb->state = TSL_RUNNING;
+          // getcontext(&(node_to_yield->tcb->context));
+          printf("node to yield tid2: %d \n", node_to_yield->tcb->tid);
+
+          context_flag = 1;
+          // printf("ready queue context %d\n", ReadyQueue->head->tcb->context);
+          setcontext(&(node_to_yield->tcb->context));
+        }
+      } else {
+        context_flag = 0;
+        return return_id;
+      }
     }
   }
   return (0);
@@ -330,6 +338,7 @@ int tsl_exit() {
     printf("tsl exit tid update: %d \n", ReadyQueue->head->tcb->tid);
     ReadyQueue->head->tcb->state = ENDED;
     printf("tsl exit state update: %d \n", ReadyQueue->head->tcb->state);
+    ReadyQueue->numOfThreads = ReadyQueue->numOfThreads - 1;
     tsl_yield(0);
   } else {
     printf("There is no running thread! \n");
