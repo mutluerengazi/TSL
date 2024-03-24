@@ -60,6 +60,7 @@ int main(int argc, char *argv[]) {
 
   printf("tsl yield result: %d \n", tsl_yield(5));
   tsl_join(5);
+    tsl_cancel(4);
   printf("main thread calling exit\n");
 
   free(tids);
