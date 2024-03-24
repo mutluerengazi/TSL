@@ -346,7 +346,41 @@ int tsl_exit() {
   return (0);
 }
 
-int tsl_join(int tid) { return (0); }
+int tsl_join(int tid) {
+    if (!library_state || !ReadyQueue) {
+        fprintf(stderr, "Library is not initialized.\n");
+        return -1; // Error: Library not initialized
+    }
+
+    TCBNode *current_node = ReadyQueue->head;
+    TCBNode *prev_node = NULL;
+
+    // Search for the target thread in the ready queue
+    while (current_node != NULL) {
+        if (current_node->tcb->tid == tid) {
+            // Wait until the target thread terminates
+            while (current_node->tcb->state != ENDED) {
+                tsl_yield(TSL_ANY);
+            }
+            
+            // Target thread has terminated, deallocate its resources
+            if (prev_node == NULL) {
+                ReadyQueue->head = current_node->next; // Remove from the head of the queue
+            } else {
+                prev_node->next = current_node->next;
+            }
+            free(current_node->tcb->stack);
+            free(current_node->tcb);
+            free(current_node);
+            printf("thread tid: %d joined \n", tid);
+            return tid; // Return the tid of the joined (target) thread
+        }
+        prev_node = current_node;
+        current_node = current_node->next;
+    }
+    // If no thread with the indicated tid is found
+    return -1;
+}
 
 int tsl_cancel(int tid) { return (0); }
 
