@@ -59,7 +59,8 @@ int main(int argc, char *argv[]) {
   tids[6] = tsl_create_thread((void (*)(void *))foo, NULL);
 
   tsl_cancel(4);
-  printf("tsl yield result: %d \n", tsl_yield(0));
+  printf("tsl yield result: %d \n", tsl_yield(2));
+  printf("tsl yield result: %d \n", tsl_yield(2));
   printf("main thread calling exit\n");
 
   free(tids);
