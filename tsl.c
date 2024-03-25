@@ -3,21 +3,21 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-/* We want the extra information from these definitions */
+
 #ifndef __USE_GNU
 #define __USE_GNU
-#endif /* __USE_GNU */
+#endif 
 
 #include "tsl.h"
 #include <stdlib.h>
 #include <time.h>
 #include <ucontext.h>
-// Define constants for scheduling algorithms if not already defined
+
 #ifndef SCHED_ALG_1
 #define SCHED_ALG_1 1
 #endif
 
-// Define TSL ERROR if not already defined
+
 #ifndef TSL_ERROR
 #define TSL_ERROR -1
 #endif
@@ -48,13 +48,12 @@ int generate_tid();
 int tid_assign = 1;
 
 int tsl_init(int salg) {
-    // Ensure the library is not already initialized
     if (library_state != NULL) {
         fprintf(stderr, "Library is already initialized.\n");
         return TSL_ERROR;
     }
     printf("salg %d \n", salg);
-    // Allocate memory for the library state
+    // allocate memory for the library state
     library_state = (TSL_Library_State *) malloc(sizeof(TSL_Library_State));
 
     if (library_state == NULL) {
@@ -62,11 +61,11 @@ int tsl_init(int salg) {
         return TSL_ERROR;
     }
 
-    // Set the scheduling algorithm and initialize num_threads
+    // set the scheduling algorithm and initialize num_threads
     library_state->scheduling_algorithm = salg;
     library_state->num_threads = 1; // Starting with the main thread
 
-    // Allocate and initialize the TCB for the main thread
+    // allocate and initialize the TCB for the main thread
     library_state->main_thread_tcb = (TCB *) malloc(sizeof(TCB));
     if (library_state->main_thread_tcb == NULL) {
         fprintf(stderr, "Failed to allocate TCB for the main thread.\n");
@@ -75,15 +74,13 @@ int tsl_init(int salg) {
         return TSL_ERROR;
     }
 
-    library_state->main_thread_tcb->tid =
-            TID_MAIN; // Assigning a unique identifier to the main thread
-    library_state->main_thread_tcb->state =
-            TSL_RUNNING; // Assuming RUNNING is a defined state
+    library_state->main_thread_tcb->tid = TID_MAIN;
+    library_state->main_thread_tcb->state = TSL_RUNNING;
 
-    // Set the current thread to the main thread's TCB
+   
     library_state->current_thread = library_state->main_thread_tcb;
 
-    // If necessary, initialize your ready queue and other data structures here
+    
     ReadyQueue = (struct queue *) malloc(sizeof(struct queue));
     ReadyQueue->head = (struct TCBNode *) malloc(sizeof(struct TCBNode));
     ReadyQueue->head->next = NULL;
@@ -92,7 +89,7 @@ int tsl_init(int salg) {
     ReadyQueue->head->tcb->state = READY;
     ReadyQueue->numOfThreads = 1;
 
-    return 0; // Success
+    return 0; 
 }
 
 int tsl_create_thread(void (*tsf)(void *), void *targ) {
@@ -108,7 +105,7 @@ int tsl_create_thread(void (*tsf)(void *), void *targ) {
         return TSL_ERROR;
     }
 
-    // Initialize the context for the new thread
+    // initialize the context for the new thread
     if (getcontext(&new_thread_tcb->context) == -1) {
         free(new_thread_tcb);
         fprintf(stderr, "Failed to get context for new thread.\n");
@@ -124,17 +121,14 @@ int tsl_create_thread(void (*tsf)(void *), void *targ) {
 
     new_thread_tcb->context.uc_stack.ss_sp = new_thread_tcb->stack;
     new_thread_tcb->context.uc_stack.ss_size = TSL_STACKSIZE;
-    new_thread_tcb->context.uc_link = 0; // No successor context
+    new_thread_tcb->context.uc_link = 0; 
 
-    // Adjusting for x86 architecture specifics
+    // adjusting for x86 architecture specifics, 32 bit
     new_thread_tcb->context.uc_mcontext.gregs[REG_EIP] = (greg_t) thread_stub;
-    new_thread_tcb->context.uc_mcontext.gregs[REG_ESP] =
-            (greg_t) (new_thread_tcb->stack + TSL_STACKSIZE -
-                      sizeof(void *) * 2); // Stack grows downward
+    new_thread_tcb->context.uc_mcontext.gregs[REG_ESP] = (greg_t) (new_thread_tcb->stack + TSL_STACKSIZE - sizeof(void *) * 2); 
 
-    // Place `tsf` and `targ` on the new thread's stack for `thread_stub` to use
-    void **stack_top =
-            (void **) (new_thread_tcb->context.uc_mcontext.gregs[REG_ESP]);
+    // tsf and targ on the new threads stack for thread_stub to use
+    void **stack_top = (void **) (new_thread_tcb->context.uc_mcontext.gregs[REG_ESP]);
     stack_top[0] = targ;
     stack_top[1] = tsf;
 
@@ -153,14 +147,14 @@ int tsl_create_thread(void (*tsf)(void *), void *targ) {
     last->next = new_tcb_node;
     ReadyQueue->numOfThreads = ReadyQueue->numOfThreads + 1;
 
-    library_state->num_threads++; // Assuming you're keeping track of thread count
+    library_state->num_threads++; 
     library_state->current_thread->tid = new_thread_tcb->tid;
     return new_thread_tcb->tid;
 }
 
 static void thread_stub(void (*tsf)(void *), void *targ) {
-    tsf(targ);  // Call the thread start function with the argument
-    tsl_exit(); // Terminate the thread when the start function returns
+    tsf(targ);  
+    tsl_exit(); 
 }
 
 int generate_tid() {
@@ -170,9 +164,7 @@ int generate_tid() {
 
 int tsl_yield(int tid) {
 
-    printf("*************************** tsl yield entered "
-           "***************************\n");
-    // printf("scheduling algo %d \n",   library_state->scheduling_algorithm);
+    printf("*************************** tsl yield entered ***************************\n");
     int context_flag = 0;
 
     if (tid == TSL_ANY) {
@@ -203,6 +195,7 @@ int tsl_yield(int tid) {
                 context_flag = 0;
                 printf("finished...\n");
                 if (ReadyQueue->head != NULL) {
+                    printf("FCFS last if.. \n");
                     return ReadyQueue->head->tcb->tid;
                 } else {
                     exit(0);
@@ -213,11 +206,11 @@ int tsl_yield(int tid) {
             getcontext(&(ReadyQueue->head->tcb->context));
 
             int randomTid;
-            // Seed the random number generator with the current time
+            // seed the random number generator with the current time
             srand(time(NULL));
-            // Generate a random number between 1 and number of threads
+            // generate a random number between 1 and number of threads
             randomTid = rand() % ReadyQueue->numOfThreads + 1;
-            // Print the random number
+            // print the random number
             printf("Random number %d\n", randomTid);
             if (context_flag == 0) {
                 printf("Random scheduling...\n");
@@ -225,6 +218,25 @@ int tsl_yield(int tid) {
                 TCBNode *prev = NULL;
                 TCBNode *temp = ReadyQueue->head;
                 TCBNode *last = ReadyQueue->head;
+                TCBNode *check_node = ReadyQueue->head;
+                int check_bool = 0;
+                while (check_node != NULL )
+                {
+                    if(check_node->tcb->tid == randomTid ){
+                        check_bool = 1;
+                        break;
+                    }
+                    check_node = check_node->next;
+                }
+                if (check_bool == 0)
+                {
+                    return TSL_ERROR;
+                }
+                if (check_node->tcb->state == ENDED)
+                {
+                    return TSL_ERROR;
+                }
+                
                 if (curr_head->next == NULL) {
                     printf("Next is empty...");
                     return TSL_ERROR;
@@ -232,7 +244,6 @@ int tsl_yield(int tid) {
                 curr_head->tcb->state = READY;
                 if (randomTid == curr_head->tcb->tid) {
                     context_flag = 1;
-                    printf("anan 1\n");
                     curr_head->tcb->state = TSL_RUNNING;
                     setcontext(&(ReadyQueue->head->tcb->context));
                 }
@@ -241,7 +252,6 @@ int tsl_yield(int tid) {
                     curr_head = curr_head->next;
                 }
                 if (curr_head->next == NULL) {
-                    printf("anan 2\n");
                     context_flag = 1;
                     ReadyQueue->head = curr_head;
                     ReadyQueue->head->next = temp->next;
@@ -250,7 +260,6 @@ int tsl_yield(int tid) {
                     ReadyQueue->head->tcb->state = TSL_RUNNING;
                     setcontext(&(ReadyQueue->head->tcb->context));
                 } else {
-                    printf("anan 3\n");
                     context_flag = 1;
                     prev->next = curr_head->next;
                     ReadyQueue->head = curr_head;
@@ -269,8 +278,7 @@ int tsl_yield(int tid) {
         }
     } // if current tid = tid
     else if (tid == ReadyQueue->head->tcb->tid) {
-        printf("READY QUEUE tid head in kendimdeyim: %d\n",
-               ReadyQueue->head->tcb->tid);
+        printf("READY QUEUE tid head in itself: %d\n",ReadyQueue->head->tcb->tid);
         getcontext(&(ReadyQueue->head->tcb->context));
         if (context_flag == 0) {
             context_flag = 1;
@@ -287,7 +295,7 @@ int tsl_yield(int tid) {
             return TSL_ERROR;
         }
 
-        // current thread is at the ready que
+        // current thread is at the ready queue
         TCBNode *prev_node = NULL;
         TCBNode *node_to_yield = ReadyQueue->head;
 
@@ -315,20 +323,14 @@ int tsl_yield(int tid) {
                     prev_node->next = node_to_yield->next;
                     node_to_yield->next = ReadyQueue->head;
                     ReadyQueue->head = node_to_yield;
-
-                    printf("node to yield tid1: %d \n", node_to_yield->tcb->tid);
-                    printf("node to yield state %d\n", node_to_yield->tcb->state);
+                    printf("node to yield tid: %d \n", node_to_yield->tcb->tid);
                     if (ReadyQueue->head->tcb->state == ENDED) {
                         printf("The thread to be yielded has ended\n");
                         return TSL_ERROR;
                     }
                     ReadyQueue->head->next->tcb->state = READY;
                     ReadyQueue->head->tcb->state = TSL_RUNNING;
-                    // getcontext(&(node_to_yield->tcb->context));
-                    printf("node to yield tid2: %d \n", node_to_yield->tcb->tid);
-
                     context_flag = 1;
-                    // printf("ready queue context %d\n", ReadyQueue->head->tcb->context);
                     setcontext(&(node_to_yield->tcb->context));
                 }
             } else {
@@ -355,23 +357,23 @@ int tsl_exit() {
 
 int tsl_join(int tid) {
     if (!library_state || !ReadyQueue) {
-        fprintf(stderr, "Library is not initialized.\n");
-        return -1; // Error: Library not initialized
+        printf("library is not initialized.\n");
+        return -1; 
     }
 
     TCBNode *current_node = ReadyQueue->head;
     TCBNode *prev_node = NULL;
 
-    // Search for the target thread in the ready queue
+    // search for the target thread in the ready queue
     while (current_node != NULL) {
         if (current_node->tcb->tid == tid) {
-            // Wait until the target thread terminates
+            // wait until the target thread terminates
             if (current_node->tcb->state != ENDED) {
                 tsl_yield(tid);
             } else {
-                // Target thread has terminated, deallocate its resources
+                // target thread terminated, deallocating its resources
                 if (prev_node == NULL) {
-                    ReadyQueue->head = current_node->next; // Remove from the head of the queue
+                    ReadyQueue->head = current_node->next; // remove from the head of the queue
                 } else {
                     prev_node->next = current_node->next;
                 }
@@ -379,20 +381,19 @@ int tsl_join(int tid) {
                 free(current_node->tcb);
                 free(current_node);
                 printf("thread tid: %d joined \n", tid);
-                return tid; // Return the tid of the joined (target) thread
+                return tid; // rreturn the tid of the joined (target) thread
             }
         }
         prev_node = current_node;
         current_node = current_node->next;
     }
-    // If no thread with the indicated tid is found
     return -1;
 }
 
 int tsl_cancel(int tid) {
     if (!library_state || !ReadyQueue) {
-        fprintf(stderr, "Library is not initialized.\n");
-        return -1; // Error: Library not initialized
+        printf( "library is not initialized.\n");
+        return -1; 
     }
 
     TCBNode *current_node = ReadyQueue->head;
@@ -422,9 +423,9 @@ int tsl_cancel(int tid) {
         prev_node = current_node;
         current_node = current_node->next;
     }
-    // If no thread with the indicated tid is found
-    fprintf(stderr, "Thread with tid %d not found.\n", tid);
-    return -1; // Error: Thread not found
+    //  no thread with the indicated tid is found
+    printf( "Thread with tid %d not found.\n", tid);
+    return -1; // thread not found
 }
 
 
@@ -432,8 +433,6 @@ int tsl_gettid() {
     if (ReadyQueue->head != NULL) {
         return ReadyQueue->head->tcb->tid;
     } else {
-        // This may indicate that the library is not initialized, or no thread is
-        // running.
         return TSL_ERROR;
     }
 }
